@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mô phỏng Cân bằng Cung - Cầu</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --demand-color: #e74c3c;
+            --supply-color: #3498db;
+            --balanced-color: #2ecc71;
+            --warning-color: #f39c12;
+            --background-light: #f0f2f5;
+            --text-dark: #34495e;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --scale-body-color: #bdc3c7;
+        }
+
+        body {
+            font-family: 'Poppins', Arial, sans-serif;
+            background-color: var(--background-light);
+            color: var(--text-dark);
+            text-align: center;
+            padding: 20px;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+        }
+
+        h2 {
+            font-size: 2em;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 30px;
+        }
+
+        /* --- PHẦN THIẾT KẾ CÂN MỚI NHẤT --- */
+        .scale-container {
+            position: relative;
+            width: 500px;
+            height: 350px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .scale-static-base {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 170px; /* Chiều cao của phần đế tĩnh */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+        }
+        
+        .scale-base-bottom {
+            width: 150px;
+            height: 15px;
+            background-color: var(--scale-body-color);
+            border-radius: 3px;
+        }
+
+        .scale-pillar {
+            width: 0;
+            height: 0;
+            border-bottom: 150px solid var(--scale-body-color);
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+        }
+        .scale-pillar::before { /* Điểm tựa trên đỉnh trụ */
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-bottom: 10px solid #95a5a6;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+        }
+
+        .scale-bar-wrapper {
+            position: absolute;
+            top: 100px;
+            width: 400px;
+            height: 10px;
+            z-index: 10;
+            transform-origin: center;
+            transition: transform 0.6s cubic-bezier(0.68, -0.55, 0.26, 1.55);
+        }
+        
+        .scale-bar {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            height: 8px;
+            background-color: var(--scale-body-color);
+            border-radius: 4px;
+        }
+        
+        /* Điểm neo treo dây */
+        .scale-bar::before, .scale-bar::after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background-color: var(--background-light);
+            border: 3px solid var(--scale-body-color);
+            border-radius: 50%;
+            top: -7px;
+            z-index: -1;
+        }
+        .scale-bar::before { left: 10px; }
+        .scale-bar::after { right: 10px; }
+
+        .pan-hanger {
+            position: absolute;
+            width: 100px;
+            height: 150px; /* Chiều cao cả dây và quả cân */
+            top: 8px; /* Treo từ thanh đòn */
+            transform-origin: center top;
+            transition: transform 0.6s cubic-bezier(0.68, -0.55, 0.26, 1.55);
+        }
+
+        #demand-hanger { left: -35px; }
+        #supply-hanger { right: -35px; }
+
+        /* Dây treo */
+        .pan-hanger::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 3px;
+            height: 60px; /* Chiều dài dây */
+            background-color: var(--scale-body-color);
+        }
+
+        .weight-sphere {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 50%;
+            color: white;
+            font-weight: 700;
+            font-size: 14px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: width 0.4s ease, height 0.4s ease, bottom 0.4s ease;
+            box-shadow: inset 0 5px 15px rgba(255,255,255,0.2), inset 0 -5px 15px rgba(0,0,0,0.3);
+        }
+
+        #demand-sphere { background-image: radial-gradient(circle at 30% 30%, #ff7979, #e74c3c); }
+        #supply-sphere { background-image: radial-gradient(circle at 30% 30%, #74b9ff, #3498db); }
+        /* --- KẾT THÚC THIẾT KẾ --- */
+
+        .controls { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin: 30px 0; }
+        .controls button { padding: 12px 25px; font-size: 16px; font-family: 'Poppins', sans-serif; font-weight: 600; cursor: pointer; border: none; border-radius: 8px; color: white; transition: all 0.2s ease; box-shadow: 0 3px 5px var(--shadow-color); }
+        .controls button:hover { transform: translateY(-2px); box-shadow: 0 5px 10px var(--shadow-color); }
+        .btn-demand { background-color: var(--demand-color); }
+        .btn-supply { background-color: var(--supply-color); }
+        .btn-reset { background-color: #95a5a6; }
+
+        .info-section { display: flex; justify-content: space-around; width: 100%; gap: 20px; flex-wrap: wrap; }
+        .status-box, .scenario-box { background-color: white; padding: 20px; border-radius: 12px; box-shadow: 0 5px 15px var(--shadow-color); width: 100%; max-width: 400px; min-height: 120px; }
+        .status-box h3, .scenario-box h3 { margin-top: 0; font-size: 1.2em; }
+        #statusHeader { font-size: 1.5em; font-weight: 700; margin-bottom: 10px; transition: color 0.3s ease; }
+        .status-balanced { color: var(--balanced-color); }
+        .status-unbalanced { color: var(--warning-color); }
+        #statusDetails { font-size: 1em; }
+        #scenarioText { font-size: 1em; font-style: italic; color: #555; min-height: 50px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>⚖️ Mô phỏng Trực quan Cân bằng Cung – Cầu</h2>
+
+        <div class="scale-container">
+            <div class="scale-bar-wrapper" id="scale-bar-wrapper">
+                <div class="scale-bar"></div>
+                <div class="pan-hanger" id="demand-hanger">
+                    <div class="weight-sphere" id="demand-sphere">DEMAND</div>
+                </div>
+                <div class="pan-hanger" id="supply-hanger">
+                    <div class="weight-sphere" id="supply-sphere">SUPPLY</div>
+                </div>
+            </div>
+            <div class="scale-static-base">
+                <div class="scale-pillar"></div>
+                <div class="scale-base-bottom"></div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn-demand" onclick="changeValue('demand', 1)">➕ Tăng Cầu</button>
+            <button class="btn-demand" onclick="changeValue('demand', -1)">➖ Giảm Cầu</button>
+            <button class="btn-supply" onclick="changeValue('supply', 1)">➕ Tăng Cung</button>
+            <button class="btn-supply" onclick="changeValue('supply', -1)">➖ Giảm Cung</button>
+            <button class="btn-reset" onclick="resetScale()">↻ Thiết lập lại</button>
+        </div>
+
+        <div class="info-section">
+             <div class="status-box">
+                <h3>Trạng thái Thị trường</h3>
+                <div id="statusHeader"></div>
+                <div id="statusDetails"></div>
+            </div>
+            <div class="scenario-box">
+                <h3>Kịch bản Thị trường (AI-Generated)</h3>
+                <p id="scenarioText">Nhấn các nút ở trên để xem các kịch bản có thể xảy ra...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let values = { demand: 1, supply: 1 };
+
+        const scenarios = {
+            increaseDemand: [ "Một ngôi sao nổi tiếng toàn cầu lăng xê sản phẩm, tạo ra cơn sốt mua sắm.", "Nghiên cứu khoa học mới cho thấy lợi ích sức khỏe bất ngờ từ sản phẩm.", "Thu nhập khả dụng của người dân tăng, họ chi tiêu nhiều hơn cho mặt hàng này.", "Giá của sản phẩm thay thế đột ngột tăng cao, người dùng chuyển sang sản phẩm này." ],
+            decreaseDemand: [ "Sản phẩm bị phát hiện có chứa chất gây hại, người tiêu dùng đồng loạt tẩy chay.", "Xuất hiện một sản phẩm thay thế mới, ưu việt và rẻ hơn.", "Kinh tế suy thoái, người dân thắt chặt chi tiêu, cắt giảm mua sắm.", "Sản phẩm trở nên lỗi thời do thay đổi về công nghệ hoặc thị hiếu." ],
+            increaseSupply: [ "Công nghệ sản xuất mới được áp dụng, giúp tăng năng suất và giảm chi phí.", "Chính phủ đưa ra chính sách trợ giá, khuyến khích các nhà sản xuất mở rộng quy mô.", "Điều kiện thời tiết thuận lợi giúp vụ mùa bội thu (áp dụng cho nông sản).", "Nhiều công ty mới gia nhập thị trường, làm tăng tính cạnh tranh." ],
+            decreaseSupply: [ "Chi phí nguyên vật liệu đầu vào tăng vọt, khiến việc sản xuất không còn lợi nhuận.", "Thiên tai phá hủy nhà máy hoặc các vùng nguyên liệu chính.", "Chính phủ áp thuế mới hoặc các quy định khắt khe hơn về sản xuất.", "Một cuộc đình công lớn xảy ra tại các nhà sản xuất hàng đầu." ]
+        };
+
+        function getRandomScenario(type) {
+            const scenarioList = scenarios[type];
+            return scenarioList[Math.floor(Math.random() * scenarioList.length)];
+        }
+
+        function changeValue(type, amount) {
+            if (values[type] + amount >= 0) {
+                values[type] += amount;
+                let scenarioType = (amount > 0 ? 'increase' : 'decrease') + (type.charAt(0).toUpperCase() + type.slice(1));
+                updateState(scenarioType);
+            }
+        }
+        
+        function resetScale() {
+            values.demand = 1;
+            values.supply = 1;
+            updateState('reset');
+        }
+
+        function updateState(scenarioType = '') {
+            const barWrapper = document.getElementById("scale-bar-wrapper");
+            const demandSphere = document.getElementById("demand-sphere");
+            const supplySphere = document.getElementById("supply-sphere");
+            const demandHanger = document.getElementById("demand-hanger");
+            const supplyHanger = document.getElementById("supply-hanger");
+            
+            const statusHeader = document.getElementById("statusHeader");
+            const statusDetails = document.getElementById("statusDetails");
+            const scenarioText = document.getElementById("scenarioText");
+
+            const baseSize = 50;
+            const sizeIncrement = 12;
+            const demandSize = baseSize + (values.demand * sizeIncrement);
+            const supplySize = baseSize + (values.supply * sizeIncrement);
+            demandSphere.style.width = `${demandSize}px`;
+            demandSphere.style.height = `${demandSize}px`;
+            supplySphere.style.width = `${supplySize}px`;
+            supplySphere.style.height = `${supplySize}px`;
+            
+            // Dịch chuyển quả cầu xuống dưới khi nó to ra để dây treo luôn chạm đỉnh
+            demandSphere.style.bottom = `${50 - (demandSize/2)}px`
+            supplySphere.style.bottom = `${50 - (supplySize/2)}px`
+
+            const tilt = (values.demand - values.supply) * 6;
+            const maxTilt = 25;
+            const finalTilt = Math.max(-maxTilt, Math.min(maxTilt, tilt));
+            
+            barWrapper.style.transform = `rotate(${finalTilt}deg)`;
+            demandHanger.style.transform = `rotate(${-finalTilt}deg)`;
+            supplyHanger.style.transform = `rotate(${-finalTilt}deg)`;
+
+            if (values.demand > values.supply) {
+                statusHeader.className = 'status-unbalanced';
+                statusHeader.innerText = 'Thiếu hụt!';
+                statusDetails.innerHTML = 'Nhu cầu vượt cung. <br>Giá có xu hướng <span style="color: var(--demand-color);">🔼 TĂNG</span>.';
+            } else if (values.supply > values.demand) {
+                statusHeader.className = 'status-unbalanced';
+                statusHeader.innerText = 'Dư thừa!';
+                statusDetails.innerHTML = 'Cung vượt nhu cầu. <br>Giá có xu hướng <span style="color: var(--supply-color);">🔽 GIẢM</span>.';
+            } else {
+                statusHeader.className = 'status-balanced';
+                statusHeader.innerText = 'Cân bằng';
+                statusDetails.innerHTML = 'Cung và cầu gặp nhau. <br>Giá cả <span style="color: var(--balanced-color);">↔️ ỔN ĐỊNH</span>.';
+            }
+
+            if (scenarioType && scenarioType !== 'reset') {
+                 scenarioText.innerText = getRandomScenario(scenarioType);
+            } else if (scenarioType === 'reset') {
+                 scenarioText.innerText = "Thị trường đã được thiết lập lại về trạng thái cân bằng.";
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            updateState('reset');
+        });
+    </script>
+</body>
+</html>
