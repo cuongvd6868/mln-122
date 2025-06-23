@@ -169,6 +169,11 @@
             box-shadow: inset 0 5px 15px rgba(255,255,255,0.2), inset 0 -5px 15px rgba(0,0,0,0.3);
         }
 
+        .scale-container_wrap {
+            display: flex;
+            justify-content: center;
+        }
+
         #demand-sphere { background-image: radial-gradient(circle at 30% 30%, #ff7979, #e74c3c); }
         #supply-sphere { background-image: radial-gradient(circle at 30% 30%, #74b9ff, #3498db); }
         /* --- KẾT THÚC THIẾT KẾ --- */
@@ -195,19 +200,22 @@
     <div class="container">
         <h2>⚖️ Mô phỏng Trực quan Cân bằng Cung – Cầu</h2>
 
-        <div class="scale-container">
-            <div class="scale-bar-wrapper" id="scale-bar-wrapper">
-                <div class="scale-bar"></div>
-                <div class="pan-hanger" id="demand-hanger">
-                    <div class="weight-sphere" id="demand-sphere">DEMAND</div>
+        <div class="scale-container_wrap">
+
+            <div class="scale-container">
+                <div class="scale-bar-wrapper" id="scale-bar-wrapper">
+                    <div class="scale-bar"></div>
+                    <div class="pan-hanger" id="demand-hanger">
+                        <div class="weight-sphere" id="demand-sphere">DEMAND</div>
+                    </div>
+                    <div class="pan-hanger" id="supply-hanger">
+                        <div class="weight-sphere" id="supply-sphere">SUPPLY</div>
+                    </div>
                 </div>
-                <div class="pan-hanger" id="supply-hanger">
-                    <div class="weight-sphere" id="supply-sphere">SUPPLY</div>
+                <div class="scale-static-base">
+                    <div class="scale-pillar"></div>
+                    <div class="scale-base-bottom"></div>
                 </div>
-            </div>
-            <div class="scale-static-base">
-                <div class="scale-pillar"></div>
-                <div class="scale-base-bottom"></div>
             </div>
         </div>
 
